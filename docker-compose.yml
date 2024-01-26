@@ -1,0 +1,28 @@
+version: "3.8"
+
+services:
+  db:
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: reddit
+      POSTGRES_USER: postgres
+    ports: 
+      - 5432:5432
+    volumes:
+      - ./db:/var/lib/postgresql/data
+
+  app:
+    depends_on:
+      - db
+    restart: always
+    build: ./app
+    env_file: ./app/.env
+    ports:
+      - 3001:3001
+    environment:
+      - DATABASE_URL=postgres://postgres:reddit@db:5432/postgres
+    stdin_open: true
+    tty: true
+    cap_add:
+      - SYS_ADMIN

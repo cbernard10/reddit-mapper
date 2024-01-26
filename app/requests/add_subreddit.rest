@@ -1,0 +1,6 @@
+POST http://localhost:3001/api/subreddits
+content-Type: application/json
+
+{
+  "name": "testsub"
+}
