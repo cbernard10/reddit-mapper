@@ -1,10 +1,19 @@
 import express from "express";
-import { User, UserSubreddit } from "../models/index.js";
+import { User, UserSubreddit, Subreddit } from "../models/index";
 
 const router = express.Router();
 
 router.get("/", async (req, res) => {
-  const users = await User.findAll();
+  const users = await User.findAll({
+    include: {
+      model: Subreddit,
+      attributes: ["name"],
+      through: {
+        model: UserSubreddit,
+        attributes: [],
+      },
+    },
+  });
   res.json(users);
 });
 
@@ -14,8 +23,11 @@ router.post("/", async (req, res) => {
     const user = await User.create({ name });
     res.json(user);
   } catch (e) {
-    console.log("cannot add user", e);
-    return res.status(400).json({ error: "User already exists" });
+    if (e.name === "SequelizeUniqueConstraintError") {
+      return res.status(400).json({
+        error: `user ${name} already exists`,
+      });
+    }
   }
 });
 
@@ -33,20 +45,5 @@ router.delete("/all", async (req, res) => {
     console.log("cannot delete users", e);
   }
 });
-
-// router.delete("/:name", async (req, res) => {
-//   const { name } = req.params;
-
-//   const user = await User.findOne({
-//     where: { name: name },
-//   });
-
-//   try {
-//     await user.destroy();
-//     res.json(user);
-//   } catch (e) {
-//     console.log("cannot delete user", e);
-//   }
-// });
 
 export { router };

@@ -15,7 +15,12 @@ Subreddit.init(
       unique: true,
     },
   },
-  { sequelize, modelName: "subreddit", underscored: true, timestamps: false }
+  {
+    sequelize,
+    modelName: "subreddit",
+    underscored: true,
+    timestamps: true,
+  }
 );
 
 export default Subreddit;

@@ -1,6 +1,6 @@
 import express from "express";
-import { Subreddit } from "../models/index.js";
-import { UserSubreddit, User } from "../models/index.js";
+import { Subreddit } from "../models/index";
+import { UserSubreddit, User } from "../models/index";
 
 const router = express.Router();
 

@@ -12,10 +12,15 @@ User.init(
     name: {
       type: DataTypes.TEXT,
       allowNull: false,
-      unique: true
+      unique: true,
     },
   },
-  { sequelize, modelName: "user", underscored: true, timestamps: false }
+  {
+    sequelize,
+    modelName: "user",
+    underscored: true,
+    timestamps: true,
+  }
 );
 
 export default User;
