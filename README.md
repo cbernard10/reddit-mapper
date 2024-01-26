@@ -7,5 +7,7 @@ docker exec -it \<id\> bash
   \- node index.js
 
 GET http://localhost:3001/api/subreddits
+
 GET http://localhost:3001/api/users
+
 GET http://localhost:3001/api/connections
