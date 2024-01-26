@@ -28,9 +28,9 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "NODE_ENV=development nodemon server.js",
+    "dev": "NODE_ENV=development nodemon --watch './**/*.ts' --exec 'node --experimental-specifier-resolution=node --loader ts-node/esm' server.ts",
     "migration:down": "node util/rollback.js",
-    "server:start": "NODE_ENV=production node server.js",
+    "server:start": "NODE_ENV=production node --loader ts-node/esm server.ts",
     "ts-node": "node --loader ts-node/esm"
   },
   "author": "",

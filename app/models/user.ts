@@ -1,7 +1,21 @@
-import { DataTypes, Model } from "sequelize";
-import { sequelize } from "../util/db.js";
+import {
+  DataTypes,
+  Model,
+  InferAttributes,
+  InferCreationAttributes,
+  CreationOptional,
+} from "sequelize";
+import { sequelize } from "../util/db";
 
-class User extends Model {}
+class User extends Model<
+  InferAttributes<User>,
+  InferCreationAttributes<User>
+> {
+  declare id: CreationOptional<number>;
+  name!: string;
+}
+
+
 User.init(
   {
     id: {

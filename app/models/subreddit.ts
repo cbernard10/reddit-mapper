@@ -1,7 +1,20 @@
-import { DataTypes, Model } from "sequelize";
-import { sequelize } from "../util/db.js";
+import {
+  DataTypes,
+  Model,
+  InferAttributes,
+  InferCreationAttributes,
+  CreationOptional,
+} from "sequelize";
 
-class Subreddit extends Model {}
+import { sequelize } from "../util/db";
+
+class Subreddit extends Model<
+  InferAttributes<Subreddit>,
+  InferCreationAttributes<Subreddit>
+> {
+  declare id: CreationOptional<number>;
+  name!: string;
+}
 Subreddit.init(
   {
     id: {

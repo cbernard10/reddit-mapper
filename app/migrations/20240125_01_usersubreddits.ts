@@ -1,7 +1,6 @@
 import { DataTypes } from "sequelize";
 
-const up = async ({ context: queryInterface }) => {
-    
+const up = async ({ context: queryInterface }: { context: any }) => {
   await queryInterface.createTable("user_subreddits", {
     id: {
       type: DataTypes.INTEGER,
@@ -21,7 +20,7 @@ const up = async ({ context: queryInterface }) => {
   });
 };
 
-const down = async ({ context: queryInterface }) => {
+const down = async ({ context: queryInterface }: { context: any }) => {
   await queryInterface.dropTable("user_subreddits");
 };
 

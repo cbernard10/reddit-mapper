@@ -1,11 +1,11 @@
 import express from "express";
-import { PORT } from "./util/config.js";
-import { connectToDatabase } from "./util/db.js";
-import { router as subredditRouter } from "./controllers/subreddits.js";
-import { router as userRouter } from "./controllers/users.js";
-import { router as connectRouter } from "./controllers/connect.js";
-import { router as overlapRouter } from "./controllers/overlaps.js";
-import { router as resetRouter } from "./controllers/reset.js";
+import { PORT } from "./util/config";
+import { connectToDatabase } from "./util/db";
+import { router as subredditRouter } from "./controllers/subreddits";
+import { router as userRouter } from "./controllers/users";
+import { router as connectRouter } from "./controllers/connect";
+import { router as overlapRouter } from "./controllers/overlaps";
+import { router as resetRouter } from "./controllers/reset";
 
 const app = express();
 app.use(express.json());

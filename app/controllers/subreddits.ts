@@ -20,8 +20,9 @@ router.get("/", async (req, res) => {
 
 router.post("/", async (req, res) => {
   const { name } = req.body;
-  console.log(name);
-  console.log(req.body);
+  if (!name || typeof name !== "string") {
+    return res.status(400).json({ error: "Invalid name" });
+  }
   try {
     const subreddit = await Subreddit.create({ name });
     res.json(subreddit);
@@ -49,14 +50,28 @@ router.delete("/all", async (req, res) => {
 router.delete("/name/:name", async (req, res) => {
   const { name } = req.params;
   let subreddit;
+  let connection;
 
   try {
     subreddit = await Subreddit.findOne({
       where: { name: name },
     });
+    if (!subreddit) {
+      return res.status(200).json({ message: "Subreddit does not exist" });
+    }
   } catch (e) {
-    console.log("cannot find subreddit");
     return res.status(200).json({ message: "Subreddit does not exist" });
+  }
+
+  try {
+    connection = await UserSubreddit.findOne({
+      where: { subredditId: subreddit.id },
+    });
+    if (!connection) {
+      return res.status(200).json({ message: "Connection does not exist" });
+    }
+  } catch (e) {
+    return res.status(200).json({ message: "Connection does not exist" });
   }
 
   try {
@@ -76,7 +91,6 @@ router.delete("/name/:name", async (req, res) => {
     res.status(204).end();
   } catch (e) {
     console.log("cannot delete subreddit", e);
-    return res.status(200).json({ message: "Subreddit does not exist" });
   }
 });
 

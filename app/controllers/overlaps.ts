@@ -21,7 +21,7 @@ router.get("/:name", async (req, res) => {
     },
   });
 
-  const overlapsWith = await Subreddit.findAll({
+  const overlapsWith: Subreddit[] = await Subreddit.findAll({
     attributes: ["name", "id"],
     include: {
       model: User,
@@ -37,9 +37,7 @@ router.get("/:name", async (req, res) => {
       },
     },
     where: {
-      [Op.and]: [
-        { name: { [Op.ne]: name } },
-      ],
+      [Op.and]: [{ name: { [Op.ne]: name } }],
     },
   });
 

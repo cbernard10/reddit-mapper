@@ -1,6 +1,6 @@
 import { DataTypes } from "sequelize";
 
-const up = async ({ context: queryInterface }) => {
+const up = async ({ context: queryInterface }: { context: any }) => {
   await queryInterface.createTable("subreddits", {
     id: {
       type: DataTypes.INTEGER,
@@ -11,6 +11,12 @@ const up = async ({ context: queryInterface }) => {
       type: DataTypes.TEXT,
       allowNull: false,
       unique: true,
+    },
+    created_at: {
+      type: DataTypes.DATE,
+    },
+    updated_at: {
+      type: DataTypes.DATE,
     },
   });
   await queryInterface.createTable("users", {
@@ -24,6 +30,12 @@ const up = async ({ context: queryInterface }) => {
       allowNull: false,
       unique: true,
     },
+    created_at: {
+      type: DataTypes.DATE,
+    },
+    updated_at: {
+      type: DataTypes.DATE,
+    },
   });
   await queryInterface.addColumn("subreddits", "user_id", {
     type: DataTypes.INTEGER,
@@ -35,7 +47,7 @@ const up = async ({ context: queryInterface }) => {
   });
 };
 
-const down = async ({ context: queryInterface }) => {
+const down = async ({ context: queryInterface }: { context: any }) => {
   await queryInterface.dropTable("subreddits");
   await queryInterface.dropTable("users");
 };

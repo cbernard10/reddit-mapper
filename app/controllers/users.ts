@@ -1,5 +1,6 @@
 import express from "express";
 import { User, UserSubreddit, Subreddit } from "../models/index";
+import { UniqueConstraintError } from "sequelize";
 
 const router = express.Router();
 
@@ -19,11 +20,16 @@ router.get("/", async (req, res) => {
 
 router.post("/", async (req, res) => {
   const { name } = req.body;
+  if (!name || !(typeof name === "string")) {
+    return res.status(400).json({
+      error: "Please provide a valid name",
+    });
+  }
   try {
     const user = await User.create({ name });
     res.json(user);
   } catch (e) {
-    if (e.name === "SequelizeUniqueConstraintError") {
+    if (e instanceof UniqueConstraintError) {
       return res.status(400).json({
         error: `user ${name} already exists`,
       });
