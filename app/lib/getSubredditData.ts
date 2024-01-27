@@ -68,11 +68,14 @@ export const getThreads = async (
     await sleep(1);
     const html = await getHtml(next_page);
     const $ = cheerio.load(html);
-    const newThreads: Thread[] = $(".thing")
+
+    const newThreads: Thread[] = [];
+
+    $(".thing")
       .not(".promoted")
-      .map((_, thing) => {
+      .each((_, thing) => {
         const $thing = $(thing);
-        const newThread = {
+        newThreads.push({
           author: $thing.attr("data-author")!,
           data: $thing.attr("data-url")!,
           title: $thing
@@ -84,11 +87,8 @@ export const getThreads = async (
           upvotes: $thing.find(".unvoted").find(".unvoted").text()!,
           thread: $thing.find(".bylink").attr("href")!,
           date: $thing.find("time").attr("datetime")!,
-        };
-        return newThread;
-      })
-      .toArray()
-      .filter((c) => c.thread);
+        });
+      });
 
     threads = [...threads, ...newThreads];
 
@@ -106,17 +106,18 @@ type Comment = {
 export const getComments = async (url: string): Promise<Comment[]> => {
   const html = await getHtml(url);
   const $ = cheerio.load(html);
-  const comments = $(".comment")
-    .map((_, comment) => {
+
+  const comments: Comment[] = [];
+
+  $(".comment")
+    .each((_, comment) => {
       const $comment = $(comment);
-      return {
+      comments.push({
         first: $comment.find("form").text()!,
         author: $comment.find(".author").first().text()!,
         upvotes: $comment.find(".unvoted").find(".unvoted").attr("title")!,
-      };
+      });
     })
-    .toArray()
-    .filter((c) => c.first);
   return comments;
 };
 

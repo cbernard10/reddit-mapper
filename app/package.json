@@ -21,6 +21,7 @@
     "@types/cheerio": "^0.22.35",
     "@types/express": "^4.17.21",
     "@types/node": "^20.11.7",
+    "@types/sequelize": "^4.28.20",
     "nodemon": "^3.0.3",
     "ts-node": "^10.9.2",
     "tslib": "^2.6.2",
@@ -31,7 +32,7 @@
     "dev": "NODE_ENV=development nodemon --watch './**/*.ts' --exec 'node --experimental-specifier-resolution=node --loader ts-node/esm' server.ts",
     "migration:down": "node util/rollback.js",
     "server:start": "NODE_ENV=production node --loader ts-node/esm server.ts",
-    "ts-node": "node --loader ts-node/esm"
+    "ts-node": "NODE_ENV=production node --loader ts-node/esm"
   },
   "author": "",
   "license": "MIT"
