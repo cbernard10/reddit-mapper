@@ -4,7 +4,7 @@ docker exec -it \<id\> bash
 
   \- npm run server:start
   
-  \- node index.js
+  \- npm run scraper:start
 
 GET http://localhost:3001/api/subreddits
 
