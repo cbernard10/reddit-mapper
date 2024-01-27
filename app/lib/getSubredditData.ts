@@ -109,15 +109,14 @@ export const getComments = async (url: string): Promise<Comment[]> => {
 
   const comments: Comment[] = [];
 
-  $(".comment")
-    .each((_, comment) => {
-      const $comment = $(comment);
-      comments.push({
-        first: $comment.find("form").text()!,
-        author: $comment.find(".author").first().text()!,
-        upvotes: $comment.find(".unvoted").find(".unvoted").attr("title")!,
-      });
-    })
+  $(".comment").each((_, comment) => {
+    const $comment = $(comment);
+    comments.push({
+      first: $comment.find("form").text()!,
+      author: $comment.find(".author").first().text()!,
+      upvotes: $comment.find(".unvoted").find(".unvoted").attr("title")!,
+    });
+  });
   return comments;
 };
 
@@ -147,7 +146,9 @@ const getRandomSubreddit = async (): Promise<string> => {
   return `r/${subreddit}`;
 };
 
-export const crawlAndFillDatabase = async () => {
+export const crawlAndFillDatabase = async (
+  deep: boolean = false
+): Promise<void> => {
   // steps:
   // 1 - start from random subreddit and add to db
   // 2 - get all recent threads from seed subreddit (sort by hot)
@@ -161,7 +162,7 @@ export const crawlAndFillDatabase = async () => {
 
     const subredditName = seed.split("/")[1].toLowerCase();
 
-    const allThreads = await getThreads(seed, false, "hot", "all");
+    const allThreads = await getThreads(seed, deep, "hot", "all");
 
     // step 2
 
