@@ -17,11 +17,12 @@ services:
       - db
     restart: always
     build: ./app
-    env_file: ./app/.env
     ports:
       - 3001:3001
     environment:
+      - NODE_ENV=production
       - DATABASE_URL=postgres://postgres:reddit@db:5432/postgres
+      - ARCH="x64"
     stdin_open: true
     tty: true
     cap_add:

@@ -42,6 +42,8 @@ Start a postgres instance in docker
 
 #### notes
 
+- On a raspberry
+
 - It might take a few hours to fill the database with enough data to get overlapping subreddits.
 
 - By default, the app only finds active users in the first page of each subreddit (~26-27 threads). To find users in the first 1000 threads, change `crawlAndFillDatabase()` to `crawlAndFillDatabase(true)` in `index.ts`.

@@ -2,6 +2,7 @@ import cheerio from "cheerio";
 import getHtml from "./parseHtml";
 import { sleep, userFrequencyMap } from "./utils";
 import axios from "axios";
+import { UserSubreddit } from "../models";
 
 let DISPLAY_BUFFER = ["\r"];
 
@@ -281,7 +282,7 @@ export const crawlAndFillDatabase2 = async (
   let globalT0 = Date.now();
   let info = "";
 
-  let scraper_retry_times = [1, 5, 10, 30, 90, 180]
+  let scraper_retry_times = [1, 5, 10, 30, 90, 180];
   let scraper_retry_time_idx = 0;
 
   while (true) {
@@ -291,14 +292,15 @@ export const crawlAndFillDatabase2 = async (
 
       // step 1
 
-      const subredditName = seed.split("/")[1].toLowerCase(); // 1
+      const displaySubredditName = seed.split("/")[1];
+      const subredditName = displaySubredditName.toLowerCase(); // 1
       const allThreads = await getThreads(seed, deep, "hot", "all"); // 2
 
       numberOfRequests = deep
         ? numberOfRequests + allThreads.length
         : numberOfRequests + 1;
 
-      newMessage(`New node: ${subredditName}`);
+      newMessage(`\nNew node: ${subredditName}`);
       const threadUrls = allThreads.map((t) => t.thread);
 
       let users: string[] = [];
@@ -308,12 +310,12 @@ export const crawlAndFillDatabase2 = async (
       let t0, t1;
       let avgTimePerLoop = 0;
 
-      for (let i = 0; i < threadUrls.length; i++) {
+      for (let i = 0; i < allThreads.length; i++) {
         // for each thread
         t0 = Date.now();
 
-        const thread = threadUrls[i];
-        const comments = await getComments(thread); // get comments
+        const thread = allThreads[i];
+        const comments = await getComments(thread.thread); // get comments
         numberOfRequests += 1;
         const newUsers = comments.map((c) => c.author); // get active users from current thread
         users = [...users, ...newUsers];
@@ -321,10 +323,12 @@ export const crawlAndFillDatabase2 = async (
 
         avgTimePerLoop = newAverage(avgTimePerLoop, t1 - t0);
         newMessage(
-          `it ${i + 1}/${threadUrls.length} | ${(t1 - t0) / 1000}s | ${(
-            1000 / avgTimePerLoop
-          ).toFixed(2)} it/s | ${(
-            (avgTimePerLoop * (threadUrls.length - i)) /
+          `${displaySubredditName} | ${thread.title} by ${
+            thread.author
+          } \n - it ${i + 1}/${allThreads.length} | scraped in ${
+            (t1 - t0) / 1000
+          }s | ${(1000 / avgTimePerLoop).toFixed(2)} it/s | ${(
+            (avgTimePerLoop * (allThreads.length - i)) /
             1000
           ).toFixed(2)}s left | ${numberOfRequests} reqs | ${(
             numberOfRequests /
@@ -450,9 +454,11 @@ export const crawlAndFillDatabase2 = async (
         const secondsRemaining = Math.floor(timeLeft % 60);
 
         newMessage(
-          `it ${i + 1}/${uniqueUsers.length} | ${(t1 - t0) / 1000}s | ${(
-            1000 / avgTimePerLoop
-          ).toFixed(
+          `${user} connects ${displaySubredditName} to ${uniqueUserSubreddits.length} subreddits \n- it ${i + 1}/${
+            uniqueUsers.length
+          } | scraped in ${
+            (t1 - t0) / 1000
+          }s | ${(1000 / avgTimePerLoop).toFixed(
             2
           )} it/s | ${minutesRemaining}min ${secondsRemaining}s left | ${numberOfRequests} reqs | ${(
             numberOfRequests /
@@ -472,7 +478,7 @@ export const crawlAndFillDatabase2 = async (
       seed = `r/${randomSubreddit.data.name}`;
     } catch (e) {
       await sleep(scraper_retry_times[scraper_retry_time_idx]);
-      
+
       scraper_retry_time_idx = Math.min(
         scraper_retry_time_idx + 1,
         scraper_retry_times.length - 1
