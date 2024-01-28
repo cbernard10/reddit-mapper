@@ -8,7 +8,7 @@ let DISPLAY_BUFFER = ["\r"];
 
 const log = () => {
   console.clear();
-  keepLastN();
+  keepLastN(100);
   console.log(DISPLAY_BUFFER.join("\n"));
 };
 
@@ -382,9 +382,7 @@ export const crawlAndFillDatabase2 = async (
           const userSubreddits = userComments.map((c) => c.inSubreddit); // get all subreddits from user
           uniqueUserSubreddits = Object.keys(userFrequencyMap(userSubreddits)); // get unique subreddits in which user has posted
         } catch (e) {
-          newMessage(
-            `Could not get comments from user ${user}: ${e}`
-          );
+          newMessage(`Could not get comments from user ${user}: ${e}`);
           continue;
         }
 
@@ -454,9 +452,9 @@ export const crawlAndFillDatabase2 = async (
         const secondsRemaining = Math.floor(timeLeft % 60);
 
         newMessage(
-          `${user} connects ${displaySubredditName} to ${uniqueUserSubreddits.length} subreddits \n- it ${i + 1}/${
-            uniqueUsers.length
-          } | scraped in ${
+          `${user} connects ${displaySubredditName} to ${
+            uniqueUserSubreddits.length
+          } subreddits \n- it ${i + 1}/${uniqueUsers.length} | scraped in ${
             (t1 - t0) / 1000
           }s | ${(1000 / avgTimePerLoop).toFixed(
             2
