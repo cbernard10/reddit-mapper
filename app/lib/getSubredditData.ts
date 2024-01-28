@@ -282,7 +282,7 @@ export const crawlAndFillDatabase2 = async (
   let globalT0 = Date.now();
   let info = "";
 
-  let scraper_retry_times = [1, 5, 10, 30, 90, 180];
+  let scraper_retry_times = [1, 10, 60, 300, 1800];
   let scraper_retry_time_idx = 0;
 
   while (true) {
