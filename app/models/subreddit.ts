@@ -13,6 +13,7 @@ class Subreddit extends Model<
   InferCreationAttributes<Subreddit>
 > {
   declare id: CreationOptional<number>;
+  declare scraped: CreationOptional<boolean>;
   name!: string;
 }
 Subreddit.init(
@@ -26,6 +27,10 @@ Subreddit.init(
       type: DataTypes.TEXT,
       allowNull: false,
       unique: true,
+    },
+    scraped: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
     },
   },
   {

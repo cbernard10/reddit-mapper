@@ -9,7 +9,7 @@ const getHtml = async (url: string): Promise<string> => {
       ? await puppeter.launch({
           executablePath: "/usr/bin/google-chrome",
           headless: "new",
-          args: ["--lang=en-US"],
+          args: ["--lang=en-US", "--no-sandbox", "--disable-setuid-sandbox"],
         })
       : await puppeter.launch({
           headless: "new",
@@ -31,13 +31,12 @@ const getHtml = async (url: string): Promise<string> => {
       });
 
       await page.waitForNavigation();
-      await page.waitForSelector(".thing");
+      await page.waitForSelector(".thing", { timeout: 5000 });
       html = await page.content();
     } catch (e) {
       console.log(`error loading page: ${e}`);
     }
   }
-  await sleep(1);
   await browser.close();
   return html;
 };

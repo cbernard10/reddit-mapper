@@ -22,10 +22,10 @@ router.get("/:name", async (req, res) => {
   });
 
   const overlapsWith: Subreddit[] = await Subreddit.findAll({
-    attributes: ["name", "id"],
+    attributes: ["name"],
     include: {
       model: User,
-      attributes: ["name"],
+      attributes: [],
       through: {
         model: UserSubreddit,
         attributes: [],

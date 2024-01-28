@@ -1,11 +1,13 @@
 import express from "express";
 import { Subreddit } from "../models/index";
 import { UserSubreddit, User } from "../models/index";
+import { UniqueConstraintError } from "sequelize";
 
 const router = express.Router();
 
 router.get("/", async (req, res) => {
   const subreddits = await Subreddit.findAll({
+    attributes: ["name", "scraped"],
     include: {
       model: User,
       attributes: ["name"],
@@ -18,17 +20,55 @@ router.get("/", async (req, res) => {
   res.json(subreddits);
 });
 
+router.get("/random", async (req, res) => {
+  const subreddits = await Subreddit.findAll({
+    attributes: ["name"],
+    include: [
+      {
+        model: User,
+        attributes: ["name"],
+        through: {
+          model: UserSubreddit,
+          attributes: [],
+        },
+      },
+    ],
+  });
+  const random = Math.floor(Math.random() * subreddits.length);
+  res.json(subreddits[random]);
+});
+
+router.get("/:name", async (req, res) => {
+  const { name } = req.params;
+  const subreddit = await Subreddit.findOne({
+    where: { name },
+    attributes: ["name", "scraped"],
+    include: {
+      model: User,
+      attributes: ["name"],
+      through: {
+        model: UserSubreddit,
+        attributes: [],
+      },
+    },
+  });
+  res.json(subreddit);
+});
+
 router.post("/", async (req, res) => {
-  const { name } = req.body;
+  const { name, scraped } = req.body;
   if (!name || typeof name !== "string") {
     return res.status(400).json({ error: "Invalid name" });
   }
   try {
-    const subreddit = await Subreddit.create({ name });
+    const subreddit = await Subreddit.create({ name, scraped });
     res.json(subreddit);
   } catch (e) {
-    console.log("cannot add subreddit", e);
-    return res.status(200).json({ message: "Subreddit already exists" });
+    if (e instanceof UniqueConstraintError) {
+      return res.status(200).json({ message: "Subreddit already exists" });
+    } else {
+      return res.status(400).json({ error: "Cannot create subreddit" });
+    }
   }
 });
 
@@ -41,9 +81,9 @@ router.delete("/all", async (req, res) => {
     await Subreddit.destroy({
       where: {},
     });
-    res.json({ message: "All subreddits deleted" });
+    res.status(200).json({ message: "All subreddits deleted" });
   } catch (e) {
-    console.log("cannot delete subreddits", e);
+    res.status(400).json({ error: "Cannot delete subreddits" });
   }
 });
 

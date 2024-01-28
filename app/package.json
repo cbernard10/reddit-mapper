@@ -30,11 +30,12 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "NODE_ENV=development nodemon --watch './**/*.ts' --exec 'node --experimental-specifier-resolution=node --loader ts-node/esm' server.ts",
-    "migration:down": "node util/rollback.js",
     "server:start": "NODE_ENV=production node --loader ts-node/esm server.ts",
     "scraper:start": "NODE_ENV=production node --loader ts-node/esm index.ts",
-    "server:start:dev": "NODE_ENV=development node --loader ts-node/esm server.ts",
+    "server:start:dev": "NODE_ENV=development nodemon --watch './**/*.ts' --exec 'node --experimental-specifier-resolution=node --loader ts-node/esm' server.ts",
     "scraper:start:dev": "NODE_ENV=development node --loader ts-node/esm index.ts",
+    "rollback:dev": "NODE_ENV=development node --loader ts-node/esm util/rollback.ts",
+    "rollback": "NODE_ENV=production node --loader ts-node/esm util/rollback.ts",
     "ts-node": "NODE_ENV=production node --loader ts-node/esm"
   },
   "author": "",

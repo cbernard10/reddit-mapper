@@ -18,6 +18,22 @@ router.get("/", async (req, res) => {
   res.json(users);
 });
 
+router.get("/:name", async (req, res) => {
+  const { name } = req.params;
+  const user = await User.findOne({
+    where: { name },
+    include: {
+      model: Subreddit,
+      attributes: ["name"],
+      through: {
+        model: UserSubreddit,
+        attributes: [],
+      },
+    },
+  });
+  res.json(user);
+});
+
 router.post("/", async (req, res) => {
   const { name } = req.body;
   if (!name || !(typeof name === "string")) {
@@ -27,11 +43,15 @@ router.post("/", async (req, res) => {
   }
   try {
     const user = await User.create({ name });
-    res.json(user);
+    res.status(200).json(user);
   } catch (e) {
     if (e instanceof UniqueConstraintError) {
       return res.status(400).json({
         error: `user ${name} already exists`,
+      });
+    } else {
+      return res.status(400).json({
+        error: `could not create user ${name}, ${e}`,
       });
     }
   }
@@ -46,9 +66,9 @@ router.delete("/all", async (req, res) => {
     await User.destroy({
       where: {},
     });
-    res.json({ message: "All users deleted" });
+    res.status(200).json({ message: "All users deleted" });
   } catch (e) {
-    console.log("cannot delete users", e);
+    res.status(400).json({ error: "Cannot delete users" });
   }
 });
 

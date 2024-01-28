@@ -10,10 +10,10 @@ import { router as resetRouter } from "./controllers/reset";
 const app = express();
 app.use(express.json());
 
-app.use("/api/subreddits", subredditRouter);
-app.use("/api/users", userRouter);
-app.use("/api/connections", connectRouter);
-app.use("/api/overlaps", overlapRouter);
+app.use("/r", subredditRouter);
+app.use("/u", userRouter);
+app.use("/connections", connectRouter);
+app.use("/overlaps", overlapRouter);
 app.use("/api/reset", resetRouter);
 
 const start = async () => {
