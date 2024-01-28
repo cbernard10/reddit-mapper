@@ -36,6 +36,7 @@
     "scraper:start:dev": "NODE_ENV=development node --loader ts-node/esm index.ts",
     "rollback:dev": "NODE_ENV=development node --loader ts-node/esm util/rollback.ts",
     "rollback": "NODE_ENV=production node --loader ts-node/esm util/rollback.ts",
+    "reset": "NODE_ENV=production node --loader ts-node/esm reset.ts",
     "ts-node": "NODE_ENV=production node --loader ts-node/esm"
   },
   "author": "",
