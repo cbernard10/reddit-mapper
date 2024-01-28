@@ -383,7 +383,7 @@ export const crawlAndFillDatabase2 = async (
           uniqueUserSubreddits = Object.keys(userFrequencyMap(userSubreddits)); // get unique subreddits in which user has posted
         } catch (e) {
           newMessage(
-            `Could not get comments from user ${user}. Maybe the user has been banned or deleted their account?`
+            `Could not get comments from user ${user}: ${e}`
           );
           continue;
         }

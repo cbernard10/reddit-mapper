@@ -38,7 +38,7 @@ const getHtml = async (url: string): Promise<string> => {
     const $ = cheerio.load(html);
     if ($(".buttons").find('[name="over18"], [value="yes"]').length > 0) {
       try {
-        await page.$eval('form>div>[value="yes]', (element) => {
+        await page.$eval('form>div>[value="yes"]', (element) => {
           if (element instanceof HTMLElement) element.click();
         });
 

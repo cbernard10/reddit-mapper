@@ -18,17 +18,21 @@
     "umzug": "^3.5.1"
   },
   "devDependencies": {
+    "@babel/plugin-transform-modules-commonjs": "^7.23.3",
     "@types/cheerio": "^0.22.35",
     "@types/express": "^4.17.21",
+    "@types/jest": "^29.5.11",
     "@types/node": "^20.11.7",
     "@types/sequelize": "^4.28.20",
+    "babel": "^6.23.0",
+    "jest": "^29.7.0",
     "nodemon": "^3.0.3",
+    "ts-jest": "^29.1.2",
     "ts-node": "^10.9.2",
     "tslib": "^2.6.2",
     "typescript": "^5.3.3"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "NODE_ENV=development nodemon --watch './**/*.ts' --exec 'node --experimental-specifier-resolution=node --loader ts-node/esm' server.ts",
     "server:start": "NODE_ENV=production node --loader ts-node/esm server.ts",
     "scraper:start": "NODE_ENV=production node --loader ts-node/esm index.ts",
@@ -37,7 +41,8 @@
     "rollback:dev": "NODE_ENV=development node --loader ts-node/esm util/rollback.ts",
     "rollback": "NODE_ENV=production node --loader ts-node/esm util/rollback.ts",
     "reset": "NODE_ENV=production node --loader ts-node/esm reset.ts",
-    "ts-node": "NODE_ENV=production node --loader ts-node/esm"
+    "ts-node": "NODE_ENV=production node --loader ts-node/esm",
+    "test": "jest --verbose"
   },
   "author": "",
   "license": "MIT"
