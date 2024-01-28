@@ -409,7 +409,7 @@ export const crawlAndFillDatabase2 = async (
             subreddit: subredditName,
           });
         } catch (e) {
-          newMessage("did not add connection ${subredditName} -> ${user}");
+          newMessage(`did not add connection ${subredditName} -> ${user}, {e}`);
         }
 
         // for each subreddit in which user has posted, add to db with flag scraped=false and link to user
@@ -429,7 +429,7 @@ export const crawlAndFillDatabase2 = async (
               scraped: userSubreddit === subredditName,
             });
           } catch (e) {
-            newMessage(`did not add subreddit ${userSubreddit}`);
+            newMessage(`did not add subreddit ${userSubreddit}, {e}`);
             continue;
           }
 
@@ -439,7 +439,7 @@ export const crawlAndFillDatabase2 = async (
               subreddit: userSubreddit,
             });
           } catch (e) {
-            newMessage(`did not add connection ${userSubreddit} -> ${user}`);
+            newMessage(`did not add connection ${userSubreddit} -> ${user}, {e}`);
           }
         }
 
