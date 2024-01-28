@@ -42,7 +42,9 @@ Start a postgres instance in docker
 
 #### notes
 
-- On a raspberry
+- On a raspberry pi: set environment variable ARCH to "arm", and use Dockerfile.arm to build the app.
+
+- Can be run in the background with `nohup docker exec -t <id> npm run server:start > server.out &` and `nohup docker exec -t <id> npm run scraper:start > scraper.out &`
 
 - It might take a few hours to fill the database with enough data to get overlapping subreddits.
 
