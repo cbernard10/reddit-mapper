@@ -38,7 +38,7 @@ const getHtml = async (url: string): Promise<string> => {
     const $ = cheerio.load(html);
     if ($(".buttons").find('[name="over18"], [value="yes"]').length > 0) {
       try {
-        await page.$eval('form>div>[value="yes', (element) => {
+        await page.$eval('form>div>[value="yes]', (element) => {
           if (element instanceof HTMLElement) element.click();
         });
 
@@ -46,11 +46,11 @@ const getHtml = async (url: string): Promise<string> => {
         await page.waitForSelector(".thing", { timeout: 5000 });
         html = await page.content();
       } catch (e) {
-        console.log(`error loading page: ${e}`);
+        console.log(`could not find button: ${e} in page ${url}`);
       }
     }
   } catch (e) {
-    console.log(`error loading page: ${e}`);
+    console.log(`could not load page: ${e}`);
   } finally {
     await browser.close();
   }
