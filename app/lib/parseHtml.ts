@@ -46,11 +46,11 @@ const getHtml = async (url: string): Promise<string> => {
         await page.waitForSelector(".thing", { timeout: 5000 });
         html = await page.content();
       } catch (e) {
-        console.log(`could not find button: ${e} in page ${url}`);
+        throw new Error(`could not find button: ${e} in page ${url}`);
       }
     }
   } catch (e) {
-    console.log(`could not load page: ${e}`);
+    throw new Error(`could not get html from ${url}: ${e}`);
   } finally {
     await browser.close();
   }
