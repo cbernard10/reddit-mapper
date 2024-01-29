@@ -16,6 +16,8 @@ const jestConfig: JestConfigWithTsJest = {
       },
     ],
   },
+  preset: "ts-jest/presets/default-esm",
+  testEnvironment: "node",
 };
 
 export default jestConfig;

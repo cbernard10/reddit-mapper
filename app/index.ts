@@ -1,8 +1,6 @@
-import {
-  crawlAndFillDatabase2,
-} from "./lib/getSubredditData";
+import { crawl } from "./lib/getSubredditData";
 
 (async () => {
   const subreddit: string = process.argv[2];
-  crawlAndFillDatabase2(subreddit);
+  crawl(subreddit, 1050);
 })();

@@ -2,7 +2,6 @@ import cheerio from "cheerio";
 import getHtml from "./parseHtml";
 import { sleep, userFrequencyMap } from "./utils";
 import axios from "axios";
-import { UserSubreddit } from "../models";
 
 let DISPLAY_BUFFER = ["\r"];
 
@@ -23,16 +22,6 @@ const newMessage = (msg: string) => {
 
 const replaceMessage = (msg: string) => {
   DISPLAY_BUFFER[DISPLAY_BUFFER.length - 1] = msg;
-  log();
-};
-
-const deleteMessage = () => {
-  DISPLAY_BUFFER.pop();
-  log();
-};
-
-const appendToLast = (msg: string) => {
-  DISPLAY_BUFFER[DISPLAY_BUFFER.length - 1] += msg;
   log();
 };
 
@@ -81,6 +70,10 @@ export const getThreads = async (
     const $ = cheerio.load(html);
 
     const newThreads: Thread[] = [];
+
+    if ($("#classy-error").length > 0 || $("div>.searchpane>h4").length > 0) {
+      throw new Error("subreddit does not exist");
+    }
 
     $(".thing")
       .not(".promoted")
@@ -171,102 +164,9 @@ export const getCommentsFromUser = async (user: string) => {
   return comments;
 };
 
-const getRandomSubreddit = async (): Promise<string> => {
-  const html = await getHtml("https://old.reddit.com/r/random/");
-  const $ = cheerio.load(html);
-  const subreddit = $(".redditname").first().find("a").text();
-  return `r/${subreddit}`;
-};
-
-export const crawlAndFillDatabase = async (
-  deep: boolean = false
-): Promise<void> => {
-  // steps:
-  // 1 - start from random subreddit and add to db
-  // 2 - get all recent threads from seed subreddit (sort by hot)
-  // 3 - get all users from all threads, add them to db and link them to sub through userSubreddit
-  // 4 - repeat
-
-  while (true) {
-    const seed = await getRandomSubreddit();
-
-    // step 1
-
-    const subredditName = seed.split("/")[1].toLowerCase();
-
-    const allThreads = await getThreads(seed, deep, "hot", "all");
-
-    // step 2
-
-    newMessage(`New node: ${subredditName}`);
-    const threadUrls = allThreads.map((t) => t.thread);
-
-    // step 3
-
-    let users: string[] = [];
-    newMessage(`Fetching users ${threadUrls.length} threads`);
-    for (let i = 0; i < threadUrls.length; i++) {
-      replaceMessage(`${i + 1}/${threadUrls.length}`);
-      const thread = threadUrls[i];
-      await sleep(1);
-      const comments = await getComments(thread);
-      await sleep(1);
-      const newUsers = comments.map((c) => c.author);
-      users = [...users, ...newUsers];
-    }
-
-    const uniqueUsers = Object.keys(userFrequencyMap(users));
-
-    try {
-      await axios.post("http://localhost:3001/r", {
-        name: subredditName,
-      });
-    } catch (e) {
-      console.log("could not add subreddit:", e);
-      continue;
-    }
-
-    newMessage(
-      `Found ${uniqueUsers.length} active users in node ${subredditName}`
-    );
-    let n_users_already_saved = 0;
-
-    for (let i = 0; i < uniqueUsers.length; i++) {
-      const user = uniqueUsers[i];
-      if (
-        !user ||
-        user === "[deleted]" ||
-        user === "" ||
-        user === "AutoModerator"
-      )
-        continue;
-
-      try {
-        // if user alredy exists, skip
-        await axios.post("http://localhost:3001/u", {
-          name: user,
-        });
-      } catch (error) {
-        // console.log(error.response.data.error);
-        n_users_already_saved++;
-      }
-
-      await axios.post("http://localhost:3001/connections", {
-        user: user,
-        subreddit: subredditName,
-      });
-    }
-
-    newMessage(
-      `Added ${
-        uniqueUsers.length - n_users_already_saved
-      } unique users to database for node ${subredditName}`
-    );
-  }
-};
-
-export const crawlAndFillDatabase2 = async (
+export const crawl = async (
   from: string = "r/all",
+  sleep_request: number = 1100,
   deep: boolean = false
 ): Promise<void> => {
   // steps:
@@ -276,25 +176,39 @@ export const crawlAndFillDatabase2 = async (
   // 4 - for each user, get all subreddits in which they have posted, add them to db with flag scraped=false and link them to user through userSubreddit
   // 5 - select random subreddit with scraped=false, set scraped to true and repeat from step 2
 
+  if (!from.startsWith("r/"))
+    throw new Error("from must be a subreddit (e.g. r/all)");
+
   let seed = null;
   let numberOfRequests = 0;
 
   let globalT0 = Date.now();
-  let info = "";
 
   let scraper_retry_times = [1, 10, 60, 300, 1800];
   let scraper_retry_time_idx = 0;
 
   while (true) {
     try {
-      scraper_retry_time_idx = 0;
       seed = seed ?? from;
 
       // step 1
 
       const displaySubredditName = seed.split("/")[1];
       const subredditName = displaySubredditName.toLowerCase(); // 1
-      const allThreads = await getThreads(seed, deep, "hot", "all"); // 2
+      let allThreads: Thread[] = [];
+
+      try {
+        allThreads = await getThreads(seed, deep, "hot", "all"); // 2
+      } catch (error) {
+        const e = error as Error;
+
+        if (e.message === "subreddit does not exist") {
+          throw new Error(`subreddit ${subredditName} does not exist`);
+        } else {
+          newMessage(`Could not get threads from ${subredditName}: ${e}`);
+          continue;
+        }
+      }
 
       numberOfRequests = deep
         ? numberOfRequests + allThreads.length
@@ -313,13 +227,16 @@ export const crawlAndFillDatabase2 = async (
       for (let i = 0; i < allThreads.length; i++) {
         // for each thread
         t0 = Date.now();
-
         const thread = allThreads[i];
         const comments = await getComments(thread.thread); // get comments
         numberOfRequests += 1;
         const newUsers = comments.map((c) => c.author); // get active users from current thread
         users = [...users, ...newUsers];
         t1 = Date.now();
+        if (t1 - t0 < sleep_request) {
+          await sleep((sleep_request - (t1 - t0)) / 1000);
+          t1 = Date.now();
+        }
 
         avgTimePerLoop = newAverage(avgTimePerLoop, t1 - t0);
         newMessage(
@@ -359,11 +276,9 @@ export const crawlAndFillDatabase2 = async (
       newMessage("");
 
       avgTimePerLoop = 0;
-      let timeLeft: number[] = [];
 
       for (let i = 0; i < uniqueUsers.length; i++) {
         t0 = Date.now();
-        info = "";
         // for each user
 
         const user = uniqueUsers[i];
@@ -439,11 +354,18 @@ export const crawlAndFillDatabase2 = async (
               subreddit: userSubreddit,
             });
           } catch (e) {
-            newMessage(`did not add connection ${userSubreddit} -> ${user}, {e}`);
+            newMessage(
+              `did not add connection ${userSubreddit} -> ${user}, {e}`
+            );
           }
         }
 
         t1 = Date.now();
+        if (t1 - t0 < sleep_request) {
+          await sleep((sleep_request - (t1 - t0)) / 1000);
+          t1 = Date.now();
+        }
+
         avgTimePerLoop = newAverage(avgTimePerLoop, t1 - t0);
 
         const timeLeft = (avgTimePerLoop * (uniqueUsers.length - i)) / 1000;
@@ -482,7 +404,9 @@ export const crawlAndFillDatabase2 = async (
         scraper_retry_times.length - 1
       );
 
-      newMessage(`Error: ${e}`);
+      newMessage(
+        `Error: ${e}, retrying in ${scraper_retry_times[scraper_retry_time_idx]}s`
+      );
     }
   }
 };
