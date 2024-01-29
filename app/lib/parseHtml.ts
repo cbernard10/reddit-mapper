@@ -1,11 +1,10 @@
 import cheerio from "cheerio";
-import browser from "./browser";
+import { browser, page } from "./browser";
 import "dotenv/config";
 
 const getHtml = async (url: string): Promise<string> => {
   let html = "";
   try {
-    let page = await browser.newPage();
     const ua =
       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.181 Safari/537.36";
     await page.setUserAgent(ua);
@@ -26,12 +25,8 @@ const getHtml = async (url: string): Promise<string> => {
         throw new Error(`could not find button: ${e} in page ${url}`);
       }
     }
-
-    await page.close();
   } catch (e) {
     throw new Error(`could not get html from ${url}: ${e}`);
-  } finally {
-    // await browser.close();
   }
 
   return html;

@@ -344,7 +344,7 @@ export const crawl = async (
               scraped: userSubreddit === subredditName,
             });
           } catch (e) {
-            newMessage(`did not add subreddit ${userSubreddit}, {e}`);
+            newMessage(`did not add subreddit ${userSubreddit}, ${e}`);
             continue;
           }
 
