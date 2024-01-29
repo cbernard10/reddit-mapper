@@ -31,6 +31,6 @@ const start_browser = async () => {
   page = await browser.newPage();
 };
 
-start_browser();
+await start_browser();
 
 export { browser, page, start_browser };
