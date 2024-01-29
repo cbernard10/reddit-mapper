@@ -400,8 +400,8 @@ export const crawl = async (
           `${
             d.toTimeString().split(" ")[0]
           } | ${displaySubredditName} --${user}--> (${
-            uniqueUsers.length
-          }) \n- ${i + 1}/${allThreads.length} | ${t1 - t0} ms | ${(
+            uniqueUserSubreddits.length
+          }) \n- ${i + 1}/${uniqueUsers.length} | ${t1 - t0} ms | ${(
             1000 / avgTimePerLoop
           ).toFixed(2)} it/s | ${minutesRemaining}:${secondsRemaining} left`
         );
