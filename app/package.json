@@ -42,7 +42,7 @@
     "rollback": "NODE_ENV=production node --loader ts-node/esm util/rollback.ts",
     "reset": "NODE_ENV=production node --loader ts-node/esm reset.ts",
     "ts-node": "NODE_ENV=production node --loader ts-node/esm",
-    "test": "jest --verbose"
+    "test": "node --no-warnings --experimental-vm-modules node_modules/jest/bin/jest --verbose"
   },
   "author": "",
   "license": "MIT"

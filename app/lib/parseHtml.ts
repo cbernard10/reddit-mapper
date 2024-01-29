@@ -1,31 +1,8 @@
-import puppeter from "puppeteer";
 import cheerio from "cheerio";
+import browser from "./browser";
 import "dotenv/config";
 
 const getHtml = async (url: string): Promise<string> => {
-  const browser =
-    process.env.NODE_ENV === "production"
-      ? await puppeter.launch({
-          executablePath:
-            process.env.ARCH === "arm"
-              ? "/usr/bin/chromium"
-              : "/usr/bin/google-chrome",
-          headless: "new",
-          args: [
-            "--lang=en-US",
-            "--no-sandbox",
-            "--disable-setuid-sandbox",
-            "--disable-gpu",
-            "--single-process",
-          ],
-        })
-      : await puppeter.launch({
-          headless: "new",
-          args: ["--lang=en-US"],
-        });
-
-  await Promise.all((await browser.pages()).map((page) => page.close()));
-
   let html = "";
   try {
     let page = await browser.newPage();
@@ -49,10 +26,12 @@ const getHtml = async (url: string): Promise<string> => {
         throw new Error(`could not find button: ${e} in page ${url}`);
       }
     }
+
+    await page.close();
   } catch (e) {
     throw new Error(`could not get html from ${url}: ${e}`);
   } finally {
-    await browser.close();
+    // await browser.close();
   }
 
   return html;
