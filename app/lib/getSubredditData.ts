@@ -165,9 +165,17 @@ export const getCommentsFromUser = async (user: string) => {
   return comments;
 };
 
+const restartBrowser = async () => {
+  let pages = await browser.pages();
+  await Promise.all(pages.map((p) => p.close()));
+  await browser.close();
+  await start_browser();
+};
+
 export const crawl = async (
   from: string = "r/all",
   sleep_request: number = 1100,
+  restart_every: number = 100,
   deep: boolean = false
 ): Promise<void> => {
   // steps:
@@ -214,6 +222,9 @@ export const crawl = async (
       numberOfRequests = deep
         ? numberOfRequests + allThreads.length
         : numberOfRequests + 1;
+      if (numberOfRequests % restart_every === 0) {
+        await restartBrowser();
+      }
 
       newMessage(`\nNew node: ${subredditName}`);
       const threadUrls = allThreads.map((t) => t.thread);
@@ -231,6 +242,9 @@ export const crawl = async (
         const thread = allThreads[i];
         const comments = await getComments(thread.thread); // get comments
         numberOfRequests += 1;
+        if (numberOfRequests % restart_every === 0) {
+          await restartBrowser();
+        }
         const newUsers = comments.map((c) => c.author); // get active users from current thread
         users = [...users, ...newUsers];
         t1 = Date.now();
@@ -298,6 +312,9 @@ export const crawl = async (
         try {
           const userComments = await getCommentsFromUser(user); // get all comments from user
           numberOfRequests += 1;
+          if (numberOfRequests % restart_every === 0) {
+            await restartBrowser();
+          }
           const userSubreddits = userComments.map((c) => c.inSubreddit); // get all subreddits from user
           uniqueUserSubreddits = Object.keys(userFrequencyMap(userSubreddits)); // get unique subreddits in which user has posted
         } catch (e) {
@@ -328,7 +345,9 @@ export const crawl = async (
             subreddit: subredditName,
           });
         } catch (e) {
-          newMessage(`did not add connection ${subredditName} -> ${user}, {e}`);
+          newMessage(
+            `did not add connection ${subredditName} -> ${user}, ${e}`
+          );
         }
 
         // for each subreddit in which user has posted, add to db with flag scraped=false and link to user
@@ -407,10 +426,8 @@ export const crawl = async (
 
       // restart browser to prevent memory issues
       newMessage("Restarting browser");
-      let pages = await browser.pages();
-      await Promise.all(pages.map((p) => p.close()));
-      await browser.close();
-      await start_browser();
+
+      await restartBrowser();
     } catch (e) {
       await sleep(scraper_retry_times[scraper_retry_time_idx]);
 
