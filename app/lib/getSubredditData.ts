@@ -166,6 +166,7 @@ export const getCommentsFromUser = async (user: string) => {
 };
 
 const restartBrowser = async () => {
+  newMessage("Restarting browser");
   let pages = await browser.pages();
   await Promise.all(pages.map((p) => p.close()));
   await browser.close();
@@ -175,7 +176,7 @@ const restartBrowser = async () => {
 export const crawl = async (
   from: string = "r/all",
   sleep_request: number = 1100,
-  restart_every: number = 100,
+  restart_every: number = 100, // restart browser every n requests to prevent memory issues
   deep: boolean = false
 ): Promise<void> => {
   // steps:
@@ -235,6 +236,7 @@ export const crawl = async (
 
       let t0, t1;
       let avgTimePerLoop = 0;
+      let timeStart = Date.now();
 
       for (let i = 0; i < allThreads.length; i++) {
         // for each thread
@@ -254,21 +256,17 @@ export const crawl = async (
         }
 
         avgTimePerLoop = newAverage(avgTimePerLoop, t1 - t0);
+        let remaining = (avgTimePerLoop * (allThreads.length - i)) / 1000;
+
         const d = new Date();
         newMessage(
           `${d.toTimeString().split(" ")[0]} | ${displaySubredditName} | ${
-            thread.title
-          } by ${thread.author} \n - it ${i + 1}/${
-            allThreads.length
-          } | scraped in ${(t1 - t0) / 1000}s | ${(
-            1000 / avgTimePerLoop
-          ).toFixed(2)} it/s | ${(
-            (avgTimePerLoop * (allThreads.length - i)) /
-            1000
-          ).toFixed(2)}s left | ${numberOfRequests} reqs | ${(
-            numberOfRequests /
-            ((Date.now() - globalT0) / 1000)
-          ).toFixed(2)} req/s`
+            thread.thread
+          } by ${thread.author} \n - ${i + 1}/${allThreads.length} | ${
+            t1 - t0
+          } ms | ${(1000 / avgTimePerLoop).toFixed(
+            2
+          )} it/s | ${remaining.toFixed(0)}s left`
         );
       }
 
@@ -401,16 +399,11 @@ export const crawl = async (
         newMessage(
           `${
             d.toTimeString().split(" ")[0]
-          } | ${user} connects ${displaySubredditName} to ${
-            uniqueUserSubreddits.length
-          } subreddits \n- it ${i + 1}/${uniqueUsers.length} | scraped in ${
-            (t1 - t0) / 1000
-          }s | ${(1000 / avgTimePerLoop).toFixed(
-            2
-          )} it/s | ${minutesRemaining}min ${secondsRemaining}s left | ${numberOfRequests} reqs | ${(
-            numberOfRequests /
-            ((Date.now() - globalT0) / 1000)
-          ).toFixed(2)} req/s`
+          } | ${displaySubredditName} --${user}--> (${
+            uniqueUsers.length
+          }) \n- ${i + 1}/${allThreads.length} | ${t1 - t0} ms | ${(
+            1000 / avgTimePerLoop
+          ).toFixed(2)} it/s | ${minutesRemaining}:${secondsRemaining} left`
         );
       }
 
@@ -423,9 +416,6 @@ export const crawl = async (
       // select random subreddit with scraped=false, set scraped to true and repeat from step 2
       const randomSubreddit = await axios.get("http://localhost:3001/r/random");
       seed = `r/${randomSubreddit.data.name}`;
-
-      // restart browser to prevent memory issues
-      newMessage("Restarting browser");
 
       await restartBrowser();
     } catch (e) {
