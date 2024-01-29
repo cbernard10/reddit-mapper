@@ -240,12 +240,15 @@ export const crawl = async (
         }
 
         avgTimePerLoop = newAverage(avgTimePerLoop, t1 - t0);
+        const d = new Date();
         newMessage(
-          `${displaySubredditName} | ${thread.title} by ${
-            thread.author
-          } \n - it ${i + 1}/${allThreads.length} | scraped in ${
-            (t1 - t0) / 1000
-          }s | ${(1000 / avgTimePerLoop).toFixed(2)} it/s | ${(
+          `${d.toTimeString().split(" ")[0]} | ${displaySubredditName} | ${
+            thread.title
+          } by ${thread.author} \n - it ${i + 1}/${
+            allThreads.length
+          } | scraped in ${(t1 - t0) / 1000}s | ${(
+            1000 / avgTimePerLoop
+          ).toFixed(2)} it/s | ${(
             (avgTimePerLoop * (allThreads.length - i)) /
             1000
           ).toFixed(2)}s left | ${numberOfRequests} reqs | ${(
@@ -374,8 +377,12 @@ export const crawl = async (
         const minutesRemaining = Math.floor(timeLeft / 60);
         const secondsRemaining = Math.floor(timeLeft % 60);
 
+        const d = new Date();
+
         newMessage(
-          `${user} connects ${displaySubredditName} to ${
+          `${
+            d.toTimeString().split(" ")[0]
+          } | ${user} connects ${displaySubredditName} to ${
             uniqueUserSubreddits.length
           } subreddits \n- it ${i + 1}/${uniqueUsers.length} | scraped in ${
             (t1 - t0) / 1000
@@ -398,13 +405,12 @@ export const crawl = async (
       const randomSubreddit = await axios.get("http://localhost:3001/r/random");
       seed = `r/${randomSubreddit.data.name}`;
 
-      // close everything and restart to avoid memory leaks
-      newMessage('Restarting browser')
+      // restart browser to prevent memory issues
+      newMessage("Restarting browser");
       let pages = await browser.pages();
       await Promise.all(pages.map((p) => p.close()));
       await browser.close();
       await start_browser();
-
     } catch (e) {
       await sleep(scraper_retry_times[scraper_retry_time_idx]);
 
