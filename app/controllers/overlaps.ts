@@ -8,6 +8,7 @@ router.get("/:name", async (req, res) => {
   const { name } = req.params;
 
   const activeUsers = await User.findAll({
+    attributes: ["name"],
     include: {
       model: Subreddit,
       attributes: ["name"],
@@ -32,7 +33,7 @@ router.get("/:name", async (req, res) => {
       },
       where: {
         name: {
-          [Op.in]: activeUsers.map((user) => user.name),
+          [Op.in]: activeUsers.map((user) => user.get("name")),
         },
       },
     },
