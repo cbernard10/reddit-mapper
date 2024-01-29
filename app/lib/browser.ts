@@ -18,9 +18,10 @@ const browser =
         ],
       })
     : await puppeter.launch({
-        headless: "new",
+        headless: false,
         args: ["--lang=en-US"],
       });
 
+const page = await browser.newPage();
 
-export default browser;
+export { browser, page };
