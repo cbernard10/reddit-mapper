@@ -4,6 +4,9 @@ import "dotenv/config";
 
 const getHtml = async (url: string): Promise<string> => {
   let html = "";
+  if (!page) {
+    return "";
+  }
   try {
     const ua =
       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.181 Safari/537.36";

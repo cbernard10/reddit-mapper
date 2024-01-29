@@ -2,6 +2,7 @@ import cheerio from "cheerio";
 import getHtml from "./parseHtml";
 import { sleep, userFrequencyMap } from "./utils";
 import axios from "axios";
+import { start_browser, browser } from "./browser";
 
 let DISPLAY_BUFFER = ["\r"];
 
@@ -396,6 +397,14 @@ export const crawl = async (
       // select random subreddit with scraped=false, set scraped to true and repeat from step 2
       const randomSubreddit = await axios.get("http://localhost:3001/r/random");
       seed = `r/${randomSubreddit.data.name}`;
+
+      // close everything and restart to avoid memory leaks
+      newMessage('Restarting browser')
+      let pages = await browser.pages();
+      await Promise.all(pages.map((p) => p.close()));
+      await browser.close();
+      await start_browser();
+
     } catch (e) {
       await sleep(scraper_retry_times[scraper_retry_time_idx]);
 
