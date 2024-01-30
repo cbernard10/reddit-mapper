@@ -1,7 +1,17 @@
 import cheerio from "cheerio";
 import getHtml from "../lib/parseHtml";
+import { start_browser, browser } from "../lib/browser";
 
 describe("get user", () => {
+
+  beforeAll(async () => {
+    await start_browser();
+  })
+
+  afterAll(async () => {
+    await browser.close();
+  })
+
   test("should get user comments", async () => {
     const html = await getHtml("https://old.reddit.com/user/spez/");
     const $ = cheerio.load(html);
