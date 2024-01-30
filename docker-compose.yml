@@ -17,6 +17,7 @@ services:
       - db
     restart: always
     build: ./app
+    init: true
     ports:
       - 3001:3001
     environment:
