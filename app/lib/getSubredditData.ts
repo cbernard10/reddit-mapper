@@ -272,7 +272,6 @@ export const crawl = async (
       for (let i = 0; i < allThreads.length; i++) {
         t0 = Date.now();
         const thread = allThreads[i];
-        newMessage(thread.thread);
         let comments = [];
         try {
           comments = await getComments(thread.thread); // get comments
