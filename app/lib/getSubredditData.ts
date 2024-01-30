@@ -2,7 +2,8 @@ import cheerio from "cheerio";
 import getHtml from "./parseHtml";
 import { sleep, userFrequencyMap } from "./utils";
 import axios from "axios";
-import { start_browser, browser } from "./browser";
+import { start_browser, browser, page } from "./browser";
+import "dotenv/config";
 
 let DISPLAY_BUFFER = ["\r"];
 
@@ -65,6 +66,9 @@ export const getThreads = async (
 
   let threads: Thread[] = [];
 
+  if (process.env.NODE_ENV === "development") {
+    newMessage(`Fetching ${next_page}`);
+  }
   while (next_page) {
     await sleep(1);
     const html = await getHtml(next_page);
@@ -109,6 +113,10 @@ type ThreadComment = {
 };
 
 export const getComments = async (url: string): Promise<ThreadComment[]> => {
+  if (process.env.NODE_ENV === "development") {
+    newMessage(`Fetching comments in ${url}`);
+  }
+
   const html = await getHtml(url);
   const $ = cheerio.load(html);
 
@@ -171,6 +179,13 @@ const restartBrowser = async () => {
   await Promise.all(pages.map((p) => p.close()));
   await browser.close();
   await start_browser();
+  const ua: string = await page!.evaluate('navigator.userAgent') as string;
+  newMessage(`UA: ${ua}`)
+};
+
+const current_time = () => {
+  const d = new Date();
+  return d.toTimeString().split(" ")[0];
 };
 
 export const crawl = async (
@@ -197,6 +212,10 @@ export const crawl = async (
   let scraper_retry_times = [1, 10, 60, 300, 1800];
   let scraper_retry_time_idx = 0;
 
+  await start_browser();
+  const ua: string = await page!.evaluate('navigator.userAgent') as string;
+  newMessage(`UA: ${ua}`)
+
   while (true) {
     try {
       seed = seed ?? from;
@@ -209,13 +228,27 @@ export const crawl = async (
 
       try {
         allThreads = await getThreads(seed, deep, "hot", "all"); // 2
+        if ((process.env.NODE_ENV = "development")) {
+          newMessage(
+            `Got ${
+              allThreads.length
+            } threads from ${subredditName}: ${JSON.stringify(
+              allThreads.map((t) => t.thread),
+              null,
+              2
+            )}`
+          );
+        }
       } catch (error) {
         const e = error as Error;
 
         if (e.message === "subreddit does not exist") {
           throw new Error(`subreddit ${subredditName} does not exist`);
         } else {
-          newMessage(`Could not get threads from ${subredditName}: ${e}`);
+          newMessage(
+            `Could not get threads from ${subredditName}: ${e}, restarting browser`
+          );
+          await restartBrowser();
           continue;
         }
       }
@@ -239,10 +272,16 @@ export const crawl = async (
       let timeStart = Date.now();
 
       for (let i = 0; i < allThreads.length; i++) {
-        // for each thread
         t0 = Date.now();
         const thread = allThreads[i];
-        const comments = await getComments(thread.thread); // get comments
+        newMessage(thread.thread);
+        let comments = [];
+        try {
+          comments = await getComments(thread.thread); // get comments
+        } catch (e) {
+          newMessage(`Could not get comments from ${thread.thread}: ${e}`);
+          continue;
+        }
         numberOfRequests += 1;
         if (numberOfRequests % restart_every === 0) {
           await restartBrowser();
@@ -280,7 +319,8 @@ export const crawl = async (
           scraped: true,
         });
       } catch (e) {
-        console.log("could not add subreddit:", e);
+        console.log("could not add subreddit:", e, "restarting browser");
+        await restartBrowser();
         continue;
       }
 
@@ -316,7 +356,10 @@ export const crawl = async (
           const userSubreddits = userComments.map((c) => c.inSubreddit); // get all subreddits from user
           uniqueUserSubreddits = Object.keys(userFrequencyMap(userSubreddits)); // get unique subreddits in which user has posted
         } catch (e) {
-          newMessage(`Could not get comments from user ${user}: ${e}`);
+          newMessage(
+            `Could not get comments from user ${user}: ${e}, "restarting browser"`
+          );
+          await restartBrowser();
           continue;
         }
 

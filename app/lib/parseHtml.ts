@@ -8,10 +8,13 @@ const getHtml = async (url: string): Promise<string> => {
     return "";
   }
   try {
-    const ua =
-      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.181 Safari/537.36";
-    await page.setUserAgent(ua);
-    await page.goto(url);
+
+    try {
+      console.log("going to url");
+      await page.goto(url, { timeout: 5000 });
+    } catch (e) {
+      throw new Error(`url unreachable ${url}: ${e}`);
+    }
 
     html = await page.content();
     const $ = cheerio.load(html);
