@@ -15,7 +15,9 @@ const config: PuppeteerLaunchOptions =
           "--no-sandbox",
           "--disable-setuid-sandbox",
           "--disable-gpu",
+          "--single-process",
           "--disable-dev-shm-usage",
+          "--no-zygote",
         ],
       }
     : {
