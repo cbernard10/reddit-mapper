@@ -10,7 +10,6 @@ const getHtml = async (url: string): Promise<string> => {
   try {
 
     try {
-      console.log("going to url");
       await page.goto(url, { timeout: 5000 });
     } catch (e) {
       throw new Error(`url unreachable ${url}: ${e}`);

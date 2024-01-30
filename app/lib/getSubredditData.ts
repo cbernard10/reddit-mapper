@@ -207,8 +207,6 @@ export const crawl = async (
   let seed = null;
   let numberOfRequests = 0;
 
-  let globalT0 = Date.now();
-
   let scraper_retry_times = [1, 10, 60, 300, 1800];
   let scraper_retry_time_idx = 0;
 
@@ -228,7 +226,7 @@ export const crawl = async (
 
       try {
         allThreads = await getThreads(seed, deep, "hot", "all"); // 2
-        if ((process.env.NODE_ENV = "development")) {
+        if (process.env.NODE_ENV === "development") {
           newMessage(
             `Got ${
               allThreads.length
