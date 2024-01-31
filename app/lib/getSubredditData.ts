@@ -1,3 +1,4 @@
+import { Config, Thread, ThreadComment, UserComment } from "../types";
 import cheerio from "cheerio";
 import getHtml from "./parseHtml";
 import { sleep, userFrequencyMap } from "./utils";
@@ -8,9 +9,11 @@ import "dotenv/config";
 let DISPLAY_BUFFER = ["\r"];
 
 const log = () => {
-  console.clear();
-  keepLastN(100);
-  console.log(DISPLAY_BUFFER.join("\n"));
+  if (process.env.NODE_ENV !== "test") {
+    console.clear();
+    keepLastN(100);
+    console.log(DISPLAY_BUFFER.join("\n"));
+  }
 };
 
 const keepLastN = (n = 30) => {
@@ -27,27 +30,26 @@ const replaceMessage = (msg: string) => {
   log();
 };
 
+const deleteLast = () => {
+  DISPLAY_BUFFER.pop();
+  log();
+};
+
 const newAverage = (old_average: number, new_value: number, alpha = 0.3) => {
   // EMA
   return old_average + (new_value - old_average) * alpha;
 };
 
-interface Thread {
-  author: string;
-  data: string;
-  title: string;
-  upvotes: string;
-  thread: string;
-  date: string;
-}
-
 export const getThreads = async (
   from: string,
-  deep: boolean,
+  sleep_request: number,
+  deep: boolean = false,
   sortBy: string | null = null,
   time: string | null = null
-): Promise<Thread[]> => {
+): Promise<Thread[] | null> => {
   const [type, page] = from.split("/");
+
+  if (type != "r" && type != "u") return null;
 
   let next_page;
 
@@ -69,15 +71,20 @@ export const getThreads = async (
   if (process.env.NODE_ENV === "development") {
     newMessage(`Fetching ${next_page}`);
   }
+
+  let it = 0;
+
+  newMessage("");
   while (next_page) {
-    await sleep(1);
+    replaceMessage(`Fetching page ${it + 1}`);
+    await sleep(sleep_request / 1000);
     const html = await getHtml(next_page);
     const $ = cheerio.load(html);
 
     const newThreads: Thread[] = [];
 
     if ($("#classy-error").length > 0 || $("div>.searchpane>h4").length > 0) {
-      throw new Error("subreddit does not exist");
+      return null;
     }
 
     $(".thing")
@@ -101,18 +108,17 @@ export const getThreads = async (
 
     threads = [...threads, ...newThreads];
 
-    next_page = !deep ? undefined : $(".next-button").find("a").attr("href");
+    next_page =
+      !deep || it == 19 ? undefined : $(".next-button").find("a").attr("href");
+    it++;
   }
+  deleteLast();
   return threads;
 };
 
-type ThreadComment = {
-  first: string;
-  author: string;
-  upvotes: string;
-};
-
-export const getComments = async (url: string): Promise<ThreadComment[]> => {
+export const getComments = async (
+  url: string
+): Promise<ThreadComment[] | null> => {
   if (process.env.NODE_ENV === "development") {
     newMessage(`Fetching comments in ${url}`);
   }
@@ -121,6 +127,10 @@ export const getComments = async (url: string): Promise<ThreadComment[]> => {
   const $ = cheerio.load(html);
 
   const comments: ThreadComment[] = [];
+
+  if ($("#classy-error").length > 0 || $("div>.searchpane>h4").length > 0) {
+    return null;
+  }
 
   $(".comment").each((_, comment) => {
     const $comment = $(comment);
@@ -133,33 +143,52 @@ export const getComments = async (url: string): Promise<ThreadComment[]> => {
   return comments;
 };
 
-export const getSubredditUsers = async (subreddit: string) => {
-  const allThreads = await getThreads(subreddit, true, "hot", "all");
+export const getSubredditUsers = async (
+  subreddit: string,
+  sleep_request: number
+) => {
+  const allThreads = await getThreads(
+    subreddit,
+    sleep_request,
+    true,
+    "hot",
+    "all"
+  );
+
+  if (!allThreads) return null;
   const threadUrls = allThreads.map((t) => t.thread);
 
   let users: string[] = [];
 
   for (let i = 0; i < threadUrls.length; i++) {
-    console.log(`${i}/${threadUrls.length}`);
     const thread = threadUrls[i];
-    await sleep(1);
+    await sleep(sleep_request);
     const comments = await getComments(thread);
-    await sleep(1);
+    if (!comments) continue;
+    await sleep(sleep_request);
     const newUsers = comments.map((c) => c.author);
     users = [...users, ...newUsers];
   }
 
+  if (users.length === 0) return null;
+
   return Object.keys(userFrequencyMap(users));
 };
 
-type UserComment = {
-  inSubreddit: string;
-  comment: string;
-};
-
 export const getCommentsFromUser = async (user: string) => {
+  if (user === "[deleted]" || user === "" || user === "AutoModerator")
+    return null;
+
   const html = await getHtml(`https://old.reddit.com/user/${user}/comments/`);
   const $ = cheerio.load(html);
+
+  if (
+    $("#classy-error").length > 0 ||
+    $("div>.searchpane>h4").length > 0 ||
+    $("[src='//www.redditstatic.com/interstitial-image-banned.png']").length > 0
+  ) {
+    return null;
+  }
 
   const comments: UserComment[] = [];
 
@@ -179,21 +208,27 @@ const restartBrowser = async () => {
   await Promise.all(pages.map((p) => p.close()));
   await browser.close();
   await start_browser();
-  const ua: string = await page!.evaluate('navigator.userAgent') as string;
-  newMessage(`UA: ${ua}`)
+  const ua: string = (await page!.evaluate("navigator.userAgent")) as string;
+  newMessage(`UA: ${ua}`);
 };
 
-const current_time = () => {
+const timestamp = (): string => {
   const d = new Date();
   return d.toTimeString().split(" ")[0];
 };
 
-export const crawl = async (
-  from: string = "r/all",
-  sleep_request: number = 1100,
-  restart_every: number = 100, // restart browser every n requests to prevent memory issues
-  deep: boolean = false
-): Promise<void> => {
+const getRandomSubreddit = async () => {
+  const randomSubreddit = await axios.get("http://localhost:3001/r/random");
+  let seed;
+  if (!randomSubreddit.data.name) {
+    seed = "r/all";
+  } else {
+    seed = `r/${randomSubreddit.data.name}`;
+  }
+  return seed;
+};
+
+export const crawl = async (config: Config): Promise<void> => {
   // steps:
   // 1 - start from seed subreddit
   // 2 - get all recent threads from seed subreddit (sort by hot)
@@ -201,31 +236,53 @@ export const crawl = async (
   // 4 - for each user, get all subreddits in which they have posted, add them to db with flag scraped=false and link them to user through userSubreddit
   // 5 - select random subreddit with scraped=false, set scraped to true and repeat from step 2
 
+  const { start, sleep_request, restart_every, deep } = config;
+
+  const from = start;
+
   if (!from.startsWith("r/"))
     throw new Error("from must be a subreddit (e.g. r/all)");
 
-  let seed = null;
+  let seed = "";
+  if (!from) {
+    seed = "r/all";
+  } else {
+    seed = from;
+  }
+
   let numberOfRequests = 0;
 
   let scraper_retry_times = [1, 10, 60, 300, 1800];
   let scraper_retry_time_idx = 0;
 
   await start_browser();
-  const ua: string = await page!.evaluate('navigator.userAgent') as string;
-  newMessage(`UA: ${ua}`)
+  const ua: string = (await page!.evaluate("navigator.userAgent")) as string;
+  newMessage(`UA: ${ua}`);
 
   while (true) {
     try {
-      seed = seed ?? from;
+      newMessage(seed);
+
+      if (seed.split("/")[1] === "u") {
+        newMessage("Seed is a user, skipping");
+        seed = await getRandomSubreddit();
+      }
 
       // step 1
 
       const displaySubredditName = seed.split("/")[1];
       const subredditName = displaySubredditName.toLowerCase(); // 1
-      let allThreads: Thread[] = [];
+      let allThreads: Thread[] | null = [];
 
       try {
-        allThreads = await getThreads(seed, deep, "hot", "all"); // 2
+        allThreads = await getThreads(seed, sleep_request, deep, "hot", "all"); // 2
+        if (!allThreads) {
+          newMessage(
+            `No thread found in ${subredditName}, selecting new random subreddit`
+          );
+          seed = await getRandomSubreddit();
+          continue;
+        }
         if (process.env.NODE_ENV === "development") {
           newMessage(
             `Got ${
@@ -267,14 +324,19 @@ export const crawl = async (
 
       let t0, t1;
       let avgTimePerLoop = 0;
-      let timeStart = Date.now();
 
       for (let i = 0; i < allThreads.length; i++) {
         t0 = Date.now();
         const thread = allThreads[i];
-        let comments = [];
+        let comments: ThreadComment[] = [];
         try {
-          comments = await getComments(thread.thread); // get comments
+          const res = await getComments(thread.thread); // get comments
+          if (!res) {
+            newMessage(`Could not get comments from ${thread.thread}`);
+            continue;
+          } else {
+            comments = res;
+          }
         } catch (e) {
           newMessage(`Could not get comments from ${thread.thread}: ${e}`);
           continue;
@@ -294,9 +356,8 @@ export const crawl = async (
         avgTimePerLoop = newAverage(avgTimePerLoop, t1 - t0);
         let remaining = (avgTimePerLoop * (allThreads.length - i)) / 1000;
 
-        const d = new Date();
         newMessage(
-          `${d.toTimeString().split(" ")[0]} | ${displaySubredditName} | ${
+          `${timestamp()} | ${displaySubredditName} | ${
             thread.thread
           } by ${thread.author} \n - ${i + 1}/${allThreads.length} | ${
             t1 - t0
@@ -350,6 +411,7 @@ export const crawl = async (
           if (numberOfRequests % restart_every === 0) {
             await restartBrowser();
           }
+          if (!userComments) continue;
           const userSubreddits = userComments.map((c) => c.inSubreddit); // get all subreddits from user
           uniqueUserSubreddits = Object.keys(userFrequencyMap(userSubreddits)); // get unique subreddits in which user has posted
         } catch (e) {
@@ -454,9 +516,9 @@ export const crawl = async (
       );
 
       // select random subreddit with scraped=false, set scraped to true and repeat from step 2
+
       const randomSubreddit = await axios.get("http://localhost:3001/r/random");
       seed = `r/${randomSubreddit.data.name}`;
-
       await restartBrowser();
     } catch (e) {
       await sleep(scraper_retry_times[scraper_retry_time_idx]);

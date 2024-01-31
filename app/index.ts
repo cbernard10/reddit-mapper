@@ -1,6 +1,6 @@
 import { crawl } from "./lib/getSubredditData";
+import config from "./config.json" assert { type: "json" };
 
 (async () => {
-  const subreddit: string = process.argv[2];
-  crawl(subreddit, 1050, 200);
+  crawl(config);
 })();

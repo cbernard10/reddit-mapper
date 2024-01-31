@@ -1,0 +1,6 @@
+{
+  "sleep_request": 1050,
+  "start": "r/all",
+  "restart_every": 200,
+  "deep": true
+}

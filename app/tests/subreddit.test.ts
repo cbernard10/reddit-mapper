@@ -1,7 +1,6 @@
-import cheerio from "cheerio";
-import getHtml from "../lib/parseHtml";
-import { getThreads } from "../lib/getSubredditData";
+import { getThreads, getComments } from "../lib/getSubredditData";
 import { start_browser, browser } from "../lib/browser";
+import { sleep } from "../lib/utils";
 
 describe("get subreddit", () => {
   beforeAll(async () => {
@@ -12,19 +11,42 @@ describe("get subreddit", () => {
     await browser.close();
   });
 
-  test("should get subreddit posts", async () => {
-    const html = await getHtml("https://old.reddit.com/r/programming/");
-    const $ = cheerio.load(html);
-    expect($(".thing")).toBeDefined();
+  beforeEach(async () => {
+    await sleep(1);
   });
 
-  test("should detect subreddits that do not exist", async () => {
-    const html = await getHtml(
-      "https://old.reddit.com/r/aerareazaeraerazrezrleauher/"
+  test("get threads if subreddit exists", async () => {
+    const threads = await getThreads("r/all", 1050)!;
+    expect(threads).toBeDefined();
+    if (threads) expect(threads.length).toBeGreaterThan(0);
+  });
+
+  test("get nothing if subreddit doesn't exist", async () => {
+    const threads = await getThreads("r/thissubredditdoesntexist", 1050);
+    expect(threads).toBeNull();
+  });
+
+  test("return null if string is invalid", async () => {
+    const threads = await getThreads("abcdefg", 1050);
+    expect(threads).toBeNull();
+  });
+
+  test("get comments if thread exists", async () => {
+    const threads = await getThreads("r/all", 1050)!;
+    expect(threads).toBeDefined();
+    if (threads) {
+      expect(threads.length).toBeGreaterThan(0);
+      const thread = threads[0];
+      const comments = await getComments(thread.thread);
+      expect(comments).toBeDefined();
+      if (comments) expect(comments.length).toBeGreaterThan(0);
+    }
+  });
+
+  test("get nothing if thread doesn't exist", async () => {
+    const comments = await getComments(
+      "https://old.reddit.com/r/all/comments/abcdefg"
     );
-    const $ = cheerio.load(html);
-    expect(
-      Math.max($("#classy-error").length, $("div>.searchpane>h4").length)
-    ).toBe(1);
+    expect(comments).toBeNull();
   });
 });
