@@ -26,7 +26,7 @@ router.get("/:name", async (req, res) => {
     attributes: ["name"],
     include: {
       model: User,
-      attributes: [],
+      attributes: ["name"],
       through: {
         model: UserSubreddit,
         attributes: [],
@@ -42,7 +42,22 @@ router.get("/:name", async (req, res) => {
     },
   });
 
-  res.json(overlapsWith);
+  res.json(
+    overlapsWith.length === 0
+      ? null
+      : overlapsWith
+          .map((o) => o.toJSON())
+          .map((o) => {
+            return {
+              ...o,
+              overlappingUsers: o.users.length,
+              users: o.users
+                .map((u: any) => u.name)
+                .sort((a: string, b: string) => a.localeCompare(b)),
+            };
+          })
+          .sort((a, b) => b.overlappingUsers - a.overlappingUsers)
+  );
 });
 
 export { router };

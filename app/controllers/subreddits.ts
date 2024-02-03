@@ -17,7 +17,23 @@ router.get("/", async (req, res) => {
       },
     },
   });
-  res.json(subreddits);
+
+  res.json(
+    !subreddits
+      ? null
+      : subreddits
+          .map((r) => r.toJSON())
+          .map((r) => {
+            return {
+              ...r,
+              userCount: r.users.length,
+              users: r.users
+                .map((u: User) => u.name)
+                .sort((a: string, b: string) => a.localeCompare(b)),
+            };
+          })
+          .sort((a, b) => b.userCount - a.userCount)
+  );
 });
 
 router.get("/random", async (req, res) => {
@@ -52,7 +68,18 @@ router.get("/:name", async (req, res) => {
       },
     },
   });
-  res.json(subreddit);
+
+  res.json(
+    !subreddit
+      ? null
+      : {
+          ...subreddit.toJSON(),
+          userCount: subreddit.users.length,
+          users: subreddit.users
+            .map((u) => u.get("name"))
+            .sort((a, b) => a.localeCompare(b)),
+        }
+  );
 });
 
 router.post("/", async (req, res) => {

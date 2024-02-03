@@ -357,13 +357,11 @@ export const crawl = async (config: Config): Promise<void> => {
         let remaining = (avgTimePerLoop * (allThreads.length - i)) / 1000;
 
         newMessage(
-          `${timestamp()} | ${displaySubredditName} | ${
-            thread.thread
-          } by ${thread.author} \n - ${i + 1}/${allThreads.length} | ${
-            t1 - t0
-          } ms | ${(1000 / avgTimePerLoop).toFixed(
-            2
-          )} it/s | ${remaining.toFixed(0)}s left`
+          `${timestamp()} | ${displaySubredditName} | ${thread.thread} by ${
+            thread.author
+          } \n - ${i + 1}/${allThreads.length} | ${t1 - t0} ms | ${(
+            1000 / avgTimePerLoop
+          ).toFixed(2)} it/s | ${remaining.toFixed(0)}s left`
         );
       }
 
@@ -383,7 +381,6 @@ export const crawl = async (config: Config): Promise<void> => {
       }
 
       let n_users_already_saved = 0;
-
       let uniqueUserSubreddits: string[] = [];
 
       newMessage("Adding users to database");
@@ -395,7 +392,7 @@ export const crawl = async (config: Config): Promise<void> => {
         t0 = Date.now();
         // for each user
 
-        const user = uniqueUsers[i];
+        const user = uniqueUsers[i].toLowerCase();
 
         if (
           !user ||
@@ -438,16 +435,18 @@ export const crawl = async (config: Config): Promise<void> => {
           n_users_already_saved++;
         }
 
-        try {
-          await axios.post("http://localhost:3001/connections", {
-            // link user to subreddit A (source node)
-            user: user,
-            subreddit: subredditName,
-          });
-        } catch (e) {
-          newMessage(
-            `did not add connection ${subredditName} -> ${user}, ${e}`
-          );
+        if (subredditName !== "all") {
+          try {
+            await axios.post("http://localhost:3001/connections", {
+              // link user to subreddit A (source node)
+              user: user,
+              subreddit: subredditName,
+            });
+          } catch (e) {
+            newMessage(
+              `did not add connection ${subredditName} -> ${user}, ${e}`
+            );
+          }
         }
 
         // for each subreddit in which user has posted, add to db with flag scraped=false and link to user

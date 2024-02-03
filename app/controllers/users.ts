@@ -6,6 +6,7 @@ const router = express.Router();
 
 router.get("/", async (req, res) => {
   const users = await User.findAll({
+    attributes: ["name"],
     include: {
       model: Subreddit,
       attributes: ["name"],
@@ -15,12 +16,28 @@ router.get("/", async (req, res) => {
       },
     },
   });
-  res.json(users);
+  res.json(
+    !users
+      ? null
+      : users
+          .map((u) => u.toJSON())
+          .map((u) => {
+            return {
+              ...u,
+              subredditCount: u.subreddits.length,
+              subreddits: u.subreddits
+                .map((s) => s.name)
+                .sort((a: string, b: string) => a.localeCompare(b)),
+            };
+          })
+          .sort((a, b) => b.subredditCount - a.subredditCount)
+  );
 });
 
 router.get("/:name", async (req, res) => {
   const { name } = req.params;
   const user = await User.findOne({
+    attributes: ["name"],
     where: { name },
     include: {
       model: Subreddit,
@@ -31,7 +48,17 @@ router.get("/:name", async (req, res) => {
       },
     },
   });
-  res.json(user);
+  res.json(
+    !user
+      ? null
+      : {
+          ...user.toJSON(),
+          subredditCount: user.subreddits.length,
+          subreddits: user.subreddits
+            .map((s) => s.get("name"))
+            .sort((a: string, b: string) => a.localeCompare(b)),
+        }
+  );
 });
 
 router.post("/", async (req, res) => {
