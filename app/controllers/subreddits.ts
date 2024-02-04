@@ -101,13 +101,19 @@ router.post("/", async (req, res) => {
 
 router.delete("/all", async (req, res) => {
   try {
-    await UserSubreddit.destroy({
-      where: {},
-    });
 
-    await Subreddit.destroy({
-      where: {},
-    });
+    const connections = await UserSubreddit.findAll({});
+    for (let i = 0; i < connections.length; i++) {
+      await connections[i].destroy();
+    }
+    console.log("connections deleted");
+
+    const subreddits = await Subreddit.findAll({});
+    for (let i = 0; i < subreddits.length; i++) {
+      await subreddits[i].destroy();
+    }
+    console.log("subreddits deleted");
+    
     res.status(200).json({ message: "All subreddits deleted" });
   } catch (e) {
     res.status(400).json({ error: "Cannot delete subreddits" });

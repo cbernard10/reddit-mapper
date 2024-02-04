@@ -303,7 +303,7 @@ export const crawl = async (config: Config): Promise<void> => {
           newMessage(
             `Could not get threads from ${subredditName}: ${e}, restarting browser`
           );
-          await restartBrowser();
+          seed = await getRandomSubreddit();
           continue;
         }
       }
@@ -398,7 +398,7 @@ export const crawl = async (config: Config): Promise<void> => {
           !user ||
           user === "[deleted]" ||
           user === "" ||
-          user === "AutoModerator"
+          user === "automoderator"
         )
           continue;
 

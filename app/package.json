@@ -40,6 +40,7 @@
     "rollback:dev": "NODE_ENV=development node --loader ts-node/esm util/rollback.ts",
     "rollback": "NODE_ENV=production node --loader ts-node/esm util/rollback.ts",
     "reset": "NODE_ENV=production node --loader ts-node/esm reset.ts",
+    "reset:dev": "NODE_ENV=development node --loader ts-node/esm reset.ts",
     "ts-node": "NODE_ENV=production node --loader ts-node/esm",
     "test": "NODE_ENV=test node --no-warnings --experimental-vm-modules node_modules/jest/bin/jest --verbose"
   },
